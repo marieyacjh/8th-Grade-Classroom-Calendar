@@ -124,6 +124,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  text-decoration: none;
 }
 
 .btn:active {
@@ -133,6 +134,7 @@ body {
 
 .btn-primary { background-color: #4ecdc4; color: white; }
 .btn-danger { background-color: #ff6b6b; color: white; }
+.btn-cwa { background-color: #ff9f43; color: white; }
 .btn-small { padding: 5px 12px; font-size: 0.9rem; border-radius: 10px; }
 
 /* Main Section Card */
@@ -154,12 +156,20 @@ body {
   justify-content: space-between;
   border-bottom: 3px dashed #ccc;
   padding-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .section-title {
   font-size: 1.4rem;
   font-weight: 900;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -493,7 +503,10 @@ input[type="text"], select {
     <div class="calendar-card" id="sec-weather">
       <div class="section-header">
         <span class="section-title">4️⃣ KAOHSIUNG WEATHER & TEMP</span>
-        <button class="btn btn-small" onclick="speakWeatherSentence()">🔊 Listen</button>
+        <div class="header-actions">
+          <a href="https://www.cwa.gov.tw/V8/E/W/County/County.html?CID=64" target="_blank" class="btn btn-small btn-cwa" title="Check official CWA Forecast">🌐 Check Live CWA Forecast</a>
+          <button class="btn btn-small" onclick="speakWeatherSentence()">🔊 Listen</button>
+        </div>
       </div>
 
       <!-- Live Weather Controls (Temp, Advisory, PoP) -->
@@ -1045,6 +1058,57 @@ function updateThemeDecorations(themeKey) {
   }
 }
 
+// Toast Notifications
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerText = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
+// Confetti Particle System
+function triggerConfetti(isGrand = false) {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const count = isGrand ? 120 : 35;
+  const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#9b59b6'];
+
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: isGrand ? canvas.height : Math.random() * canvas.height * 0.5,
+      r: Math.random() * 6 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 6,
+      vy: isGrand ? -(Math.random() * 8 + 5) : Math.random() * 3 + 2,
+      gravity: 0.15
+    });
+  }
+
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    });
+
+    frame++;
+    if (frame < 80) requestAnimationFrame(animate);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  animate();
+}
+
 // URL Link Generation
 function generateShareableLink() {
   const config = { theme: document.getElementById('setting-bg').value };
@@ -1054,57 +1118,7 @@ function generateShareableLink() {
   out.innerText = url;
   out.style.display = 'block';
   navigator.clipboard.writeText(url);
-  showToast("Link Copied to Clipboard!");
-}
-
-// UI Toast Notification
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.innerText = msg;
-  toast.style.display = 'block';
-  setTimeout(() => { toast.style.display = 'none'; }, 2000);
-}
-
-// Lightweight Confetti System
-function triggerConfetti(big = false) {
-  const canvas = document.getElementById('confetti-canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  const count = big ? 150 : 50;
-  const particles = [];
-  const colors = ['#ff4081', '#00e676', '#ffeb3b', '#00e5ff', '#ff6e40'];
-
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: canvas.width / 2,
-      y: canvas.height / 2,
-      vx: (Math.random() - 0.5) * (big ? 18 : 10),
-      vy: (Math.random() - 0.5) * (big ? 18 : 10) - 5,
-      size: Math.random() * 8 + 4,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      life: 100
-    });
-  }
-
-  function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let active = false;
-    particles.forEach(p => {
-      if (p.life > 0) {
-        active = true;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.2;
-        p.life--;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-      }
-    });
-    if (active) requestAnimationFrame(render);
-  }
-  render();
+  showToast("Link copied to clipboard!");
 }
 </script>
 </body>
