@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kaohsiung Weather & Spelling Bee - Marie's Creative Classroom</title>
+<style>
+:root {
+  --honey-yellow: #fff9c4;
+  --bee-yellow: #ffeb3b;
+  --bee-black: #212121;
+  --soft-white: #ffffff;
+  --border-color: #fbc02d;
+  --success-green: #4caf50;
+  --sky-blue: #e3f2fd;
+  --accent-orange: #ff9800;
+  --game-scale: 1;
+}
+
+body {
+  font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", sans-serif;
+  background-color: var(--soft-white);
+  color: var(--bee-black);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+.menu-bg {
+  background-color: #fffde7;
+  position: relative;
+  overflow: hidden;
+}
+
+.pastel-bee {
+  position: absolute; width: 50px; height: 40px; background: var(--bee-yellow);
+  border-radius: 50%; border: 2px solid #000; opacity: 0.8; z-index: 0;
+  animation: float 6s infinite ease-in-out;
+}
+.pastel-bee::after {
+  content: ''; position: absolute; top: 5px; left: 15px;
+  width: 10px; height: 30px; border-left: 5px solid #000; border-right: 5px solid #000;
+}
+.pastel-bee::before {
+  content: ''; position: absolute; top: -10px; left: 10px;
+  width: 20px; height: 15px; background: rgba(255,255,255,0.7); border-radius: 50%;
+  box-shadow: 15px 0 0 rgba(255,255,255,0.7);
+}
+
+@keyframes float {
+  0% { left: -10%; transform: translateY(0px) rotate(10deg); }
+  50% { transform: translateY(-50px) rotate(-10deg); }
+  100% { left: 110%; transform: translateY(0px) rotate(10deg); }
+}
+
+.screen { 
+  display: none; min-height: 100vh; flex-direction: column; align-items: center;
+  padding: 20px; box-sizing: border-box; position: relative; z-index: 1; 
+}
+.active { display: flex; }
+
+.main-title { 
+  font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 900; margin: 15px 0 0 0;
+  text-align: center; color: var(--bee-black); line-height: 1.1; 
+}
+.sub-title { 
+  font-size: clamp(1.1rem, 4vw, 1.6rem); margin: 5px 0 20px 0; font-weight: normal; 
+  color: var(--bee-black); text-align: center; 
+}
+
+.btn {
+  background-color: var(--bee-yellow); border: 3px solid var(--bee-black);
+  border-radius: 20px; padding: 12px 30px; font-size: 1.3rem; font-weight: bold;
+  font-family: inherit; cursor: pointer; margin: 8px; box-shadow: 0 5px 0 var(--bee-black);
+  color: var(--bee-black); transition: transform 0.1s;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--bee-black); }
+.btn-small { padding: 6px 12px; font-size: 0.95rem; border-radius: 12px; box-shadow: 0 3px 0 var(--bee-black); }
+.btn-next { background-color: var(--success-green); color: white; margin-top: 15px; display: none; }
+.btn-speak { background-color: #81d4fa; }
+
+.game-picker {
+  background: #fff; border: 3px solid var(--bee-black); border-radius: 15px;
+  padding: 8px 15px; display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
+  color: var(--bee-black); flex-wrap: wrap; justify-content: center;
+}
+
+.scoreboard {
+  font-size: 2rem; font-weight: bold; color: var(--bee-black);
+  background: var(--bee-yellow); padding: 5px 20px; border-radius: 15px;
+  border: 3px solid var(--bee-black); margin-bottom: 10px;
+}
+
+.display-area { 
+  font-size: 2.2rem; font-weight: bold; min-height: 55px; margin: 10px;
+  border-bottom: 5px solid var(--bee-black); text-align: center; min-width: 200px; 
+  white-space: pre-wrap; word-break: break-word; color: var(--bee-black); 
+}
+.correct-flash { color: var(--success-green); border-bottom-color: var(--success-green) !important; }
+
+/* Weather Section Specific CSS */
+.weather-card {
+  background: var(--sky-blue); border: 3px solid var(--bee-black);
+  border-radius: 20px; padding: 15px; width: 95%; max-width: 750px;
+  box-shadow: 0 6px 0 var(--bee-black); margin-bottom: 15px;
+}
+.weather-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 10px 0;
+}
+.weather-box {
+  background: white; border: 2px solid var(--bee-black); border-radius: 12px; padding: 8px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.weather-box label { font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
+.weather-box select, .weather-box input {
+  width: 90%; font-family: inherit; font-size: 1rem; border: 2px solid #ccc; border-radius: 8px; padding: 4px;
+}
+.sentence-box {
+  background: #ffffff; border: 3px dashed var(--accent-orange); border-radius: 15px;
+  padding: 15px; margin-top: 10px; font-size: 1.25rem; font-weight: bold; line-height: 1.6; text-align: center;
+}
+
+/* Gameplay Elements */
+.unscramble-container {
+  display: flex; flex-direction: column; align-items: center; width: 100%;
+  transform: scale(var(--game-scale)); transform-origin: top center;
+}
+.target-slots { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; min-height: 55px; }
+.word-group { display: flex; gap: 4px; justify-content: center; }
+.slot {
+  width: clamp(32px, 7vw, 45px); height: clamp(42px, 9vw, 55px);
+  border: 3px dashed #ccc; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: clamp(1.1rem, 4.5vw, 1.6rem); font-weight: bold; background: rgba(255,255,255,0.5); color: var(--bee-black);
+}
+.slot.filled { cursor: pointer; }
+.letter-pool { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 95%; padding: 12px; background: #fdfdfd; border-radius: 20px; border: 2px solid #eee; }
+.tile {
+  width: clamp(32px, 7vw, 45px); height: clamp(42px, 9vw, 55px); background: var(--bee-yellow);
+  border: 3px solid var(--bee-black); border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: clamp(1.1rem, 4.5vw, 1.6rem); font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #000; color: var(--bee-black);
+}
+
+.keyboard {
+  display: flex; flex-direction: column; align-items: center; width: 100%; min-height: 220px;
+  transform: scale(var(--game-scale)); transform-origin: top center;
+}
+.kb-row { display: flex; justify-content: center; margin-bottom: 4px; width: 100%; }
+.key {
+  min-width: clamp(28px, 7vw, 42px); height: clamp(38px, 9vw, 50px); margin: 2px; background: #fff;
+  border: 2px solid var(--bee-black); border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 0.95rem; cursor: pointer; user-select: none; font-family: inherit; color: var(--bee-black);
+}
+.key-active { background: var(--bee-yellow); transform: translateY(2px); box-shadow: none; }
+
+.duel-container { display: flex; width: 100vw; height: 75vh; }
+.team-side { flex: 1; display: flex; flex-direction: column; align-items: center; border: 1px solid #ddd; padding: 10px; overflow-y: auto; position: relative; }
+.back-btn { position: absolute; top: 10px; left: 10px; z-index: 100; }
+input, textarea { font-family: inherit; font-size: 1rem; border-radius: 8px; border: 2px solid #ccc; padding: 5px; color: var(--bee-black); }
+#link-display-box { word-break: break-all; background: #eee; padding: 10px; border-radius: 10px; font-size: 0.8rem; margin-top: 10px; max-width: 80%; display: none; color: var(--bee-black); }
+.control-group { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 10px 0; padding: 12px; border: 2px solid #ddd; border-radius: 15px; }
+.zoom-ctrl { display: flex; align-items: center; gap: 8px; }
+.radio-group { display: flex; gap: 15px; font-weight: bold; }
+
+@media (max-width: 600px) {
+  .duel-container { flex-direction: column; height: auto; }
+  .team-side { border: none; border-bottom: 2px solid #eee; min-height: 40vh; }
+  .main-title { font-size: 2.2rem; }
+}
+</style>
+</head>
+<body>
+
+<button class="btn btn-small back-btn" onclick="showScreen('menu-screen')">BACK</button>
+
+<!-- MENU SCREEN -->
+<div id="menu-screen" class="screen active menu-bg">
+  <h1 class="main-title">KAOHSIUNG ESL CLASSROOM</h1>
+  <h2 class="sub-title">Marie's Creative Classroom</h2>
+  <div id="load-msg" style="color:var(--success-green); font-weight:bold; display:none;">LIST LOADED!</div>
+  <button class="btn" onclick="showScreen('weather-screen')">WEATHER & TEMP</button>
+  <button class="btn" onclick="openModeSelect('practice')">SPELLING PRACTICE</button>
+  <button class="btn" onclick="openModeSelect('duel')">TEAM DUEL</button>
+  <button class="btn" onclick="showScreen('edit-screen')">EDIT WORDS</button>
+  <button class="btn" onclick="showScreen('code-screen')">GAME LINK</button>
+</div>
+
+<!-- WEATHER SECTION -->
+<div id="weather-screen" class="screen">
+  <h2>KAOHSIUNG CWA WEATHER REPORT</h2>
+  
+  <div class="game-picker">
+    <span>Student #</span>
+    <input type="text" id="student-list-w" value="1-20" style="width:70px;">
+    <button class="btn btn-small" onclick="pickStudent('w')">PICK</button>
+    <b id="num-w" style="font-size: 1.3rem; margin-left: 5px;">-</b>
+  </div>
+
+  <div class="weather-card">
+    <div class="weather-grid">
+      <div class="weather-box">
+        <label>Sky Condition / Rain</label>
+        <select id="w-sky" onchange="updateWeatherSentence()">
+          <option value="Partly Cloudy">Partly Cloudy</option>
+          <option value="Mostly Clear">Mostly Clear</option>
+          <option value="Overcast">Overcast</option>
+          <option value="Occasional Showers">Occasional Showers</option>
+          <option value="Afternoon Occasional Thundershowers" selected>Afternoon Thundershowers</option>
+        </select>
+      </div>
+
+      <div class="weather-box">
+        <label>Comfort Index</label>
+        <select id="w-comfort" onchange="updateWeatherSentence()">
+          <option value="Cool">Cool</option>
+          <option value="Comfortable">Comfortable</option>
+          <option value="Hot">Hot</option>
+          <option value="Extremely Hot" selected>Extremely Hot</option>
+        </select>
+      </div>
+
+      <div class="weather-box">
+        <label>Temperature (°C)</label>
+        <select id="w-temp" onchange="updateWeatherSentence()">
+          <!-- Populated by JS dynamically from 25 to 38 -->
+        </select>
+      </div>
+
+      <div class="weather-box">
+        <label>Seasonal Advisory</label>
+        <select id="w-advisory" onchange="updateWeatherSentence()">
+          <option value="High UV Index" selected>High UV Index</option>
+          <option value="Heat Advisory">Heat Advisory</option>
+          <option value="High Humidity">High Humidity</option>
+          <option value="Southwesterly Winds">Southwesterly Winds</option>
+          <option value="Northeast Monsoon">Northeast Monsoon</option>
+          <option value="Typhoon Alert">Typhoon Alert</option>
+        </select>
+      </div>
+
+      <div class="weather-box">
+        <label>Rain Probability (PoP)</label>
+        <select id="w-pop" onchange="updateWeatherSentence()">
+          <option value="10">10%</option>
+          <option value="30" selected>30%</option>
+          <option value="50">50%</option>
+          <option value="70">70%</option>
+          <option value="90">90%</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sentence-box">
+      <p style="margin: 0 0 10px 0; color: #555; font-size: 1rem;">Q: How is the weather in Kaohsiung today?</p>
+      <div id="weather-output">It is Partly Cloudy and Comfortable. The temperature is 32°C with High UV Index and 30% chance of rain.</div>
+    </div>
+  </div>
+
+  <button class="btn btn-speak" onclick="speakWeather()">LISTEN & REPEAT 🔊</button>
+</div>
+
+<!-- MODE SELECTION -->
+<div id="mode-screen" class="screen">
+  <h2>SELECT GAME STYLE</h2>
+  <div class="control-group">
+    <p>WORD ORDER:</p>
+    <div class="radio-group">
+      <label><input type="radio" name="order-p" value="unshuffle" checked> Normal</label>
+      <label><input type="radio" name="order-p" value="shuffle"> Shuffle</label>
+    </div>
+  </div>
+  <button class="btn" onclick="startGame('unscramble')">UNSCRAMBLE</button>
+  <button class="btn" onclick="startGame('spell')">SPELL IT</button>
+</div>
+
+<!-- TEAM SETUP SCREEN -->
+<div id="setup-screen" class="screen">
+  <h2>TEAM SETUP</h2>
+  <div class="control-group">
+    <p>WORD ORDER:</p>
+    <div class="radio-group">
+      <label><input type="radio" name="order-d" value="unshuffle" checked> Normal</label>
+      <label><input type="radio" name="order-d" value="shuffle"> Shuffle</label>
+    </div>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; justify-content:center; gap: 20px; margin-bottom: 20px;">
+    <div style="text-align:center;">
+      <h3>TEAM A</h3>
+      <input type="text" id="team-a-name" value="TEAM A"><br><br>
+      <input type="text" id="team-a-nums" placeholder="e.g. 1-10" value="1-20">
+    </div>
+    <div style="text-align:center;">
+      <h3>TEAM B</h3>
+      <input type="text" id="team-b-name" value="TEAM B"><br><br>
+      <input type="text" id="team-b-nums" placeholder="e.g. 1-10" value="1-20">
+    </div>
+  </div>
+  <button class="btn" onclick="confirmSetup()">START DUEL</button>
+</div>
+
+<!-- SINGLE PLAYER GAME SCREEN -->
+<div id="game-screen" class="screen">
+  <div class="game-picker">
+    <span>Student #</span>
+    <input type="text" id="student-list-p" value="1-20" style="width:70px;">
+    <button class="btn btn-small" onclick="pickStudent('p')">PICK</button>
+    <b id="num-p" style="font-size: 1.3rem; margin-left: 5px;">-</b>
+    <div class="zoom-ctrl" style="margin-left: 15px; border-left: 1px solid #ccc; padding-left: 10px;">
+      <span>Zoom:</span>
+      <input type="range" min="0.5" max="1.5" step="0.1" value="1" oninput="adjustZoom(this.value)">
+    </div>
+  </div>
+  <button class="btn btn-speak" onclick="speakWord()">LISTEN 🔊</button>
+  <div id="p-play" style="width:100%;"></div>
+  <button id="next-btn-p" class="btn btn-next" onclick="nextWord()">NEXT WORD →</button>
+</div>
+
+<!-- TEAM DUEL GAME SCREEN -->
+<div id="duel-screen" class="screen" style="padding:0;">
+  <div class="duel-container">
+    <div class="team-side">
+      <div id="score-l" class="scoreboard">0</div>
+      <div class="game-picker">
+        <b id="team-l-label">TEAM A</b>
+        <button class="btn btn-small" onclick="pickStudent('l')">PICK</button>
+        <b id="num-l">-</b>
+      </div>
+      <div id="l-play"></div>
+    </div>
+    <div class="team-side">
+      <div id="score-r" class="scoreboard">0</div>
+      <div class="game-picker">
+        <b id="team-r-label">TEAM B</b>
+        <button class="btn btn-small" onclick="pickStudent('r')">PICK</button>
+        <b id="num-r">-</b>
+      </div>
+      <div id="r-play"></div>
+    </div>
+  </div>
+  <button class="btn btn-speak" style="position:fixed; bottom:70px;" onclick="speakWord()">LISTEN 🔊</button>
+  <button id="next-btn-duel" class="btn btn-next" style="position:fixed; bottom:10px; width: 220px;" onclick="nextWord()">NEXT WORD →</button>
+</div>
+
+<!-- EDIT LIST SCREEN -->
+<div id="edit-screen" class="screen">
+  <h2>EDIT WORD LIST</h2>
+  <textarea id="word-input" rows="8" cols="30"></textarea><br>
+  <button class="btn" onclick="saveWords()">GENERATE GAME LINK</button>
+  <div id="link-display-box"></div>
+</div>
+
+<!-- MANUAL CODE SCREEN -->
+<div id="code-screen" class="screen">
+  <h2>MANUAL LINK LOAD</h2>
+  <p>Paste a game link here:</p>
+  <input type="text" id="game-code-input" style="width:80%;"><br><br>
+  <button class="btn" onclick="loadByCode()">LOAD</button>
+</div>
+
+<script>
+let originalWords = [
+  "Kaohsiung",
+  "Weather Forecast",
+  "Temperature",
+  "Thundershowers",
+  "Comfortable",
+  "Humidity"
+];
+let currentWords = [...originalWords];
+let wordIndex = 0;
+let gameMode = 'practice';
+let gameStyle = 'spell';
+let isCaps = false;
+let isWaitingForNext = false;
+let currentLayout = 'qwerty';
+let scoreA = 0;
+let scoreB = 0;
+
+const qwerty = [
+  ["Q","W","E","R","T","Y","U","I","O","P"],
+  ["A","S","D","F","G","H","J","K","L"],
+  ["Z","X","C","V","B","N","M"]
+];
+const symbols = [
+  ["1","2","3","4","5","6","7","8","9","0"],
+  ["!", "@", "#", "&", "-", "_"],
+  ["\"", "'", ",", ".", "?", "/"]
+];
+
+window.onload = () => {
+  populateTempOptions();
+  
+  const params = new URLSearchParams(window.location.search);
+  const data = params.get('w');
+  if(data) {
+    try {
+      originalWords = JSON.parse(atob(data));
+      currentWords = [...originalWords];
+      document.getElementById('load-msg').style.display = 'block';
+    } catch(e) { console.log("URL load error"); }
+  }
+  document.getElementById('word-input').value = originalWords.join('\n');
+  createBees();
+  updateWeatherSentence();
+};
+
+function populateTempOptions() {
+  const tempSelect = document.getElementById('w-temp');
+  tempSelect.innerHTML = "";
+  for(let i = 25; i <= 38; i++) {
+    let opt = document.createElement('option');
+    opt.value = i;
+    opt.innerText = i + "°C";
+    if(i === 33) opt.selected = true;
+    tempSelect.appendChild(opt);
+  }
+}
+
+function updateWeatherSentence() {
+  const sky = document.getElementById('w-sky').value;
+  const comfort = document.getElementById('w-comfort').value;
+  const temp = document.getElementById('w-temp').value;
+  const advisory = document.getElementById('w-advisory').value;
+  const pop = document.getElementById('w-pop').value;
+
+  const sentence = `It is ${sky} and ${comfort}. The temperature is ${temp}°C with ${advisory} and ${pop}% chance of rain.`;
+  document.getElementById('weather-output').innerText = sentence;
+}
+
+function speakWeather() {
+  const text = document.getElementById('weather-output').innerText;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; 
+  window.speechSynthesis.speak(u);
+}
+
+function adjustZoom(val) {
+  document.documentElement.style.setProperty('--game-scale', val);
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function createBees() {
+  const menu = document.getElementById('menu-screen');
+  for(let i=0; i<4; i++) {
+    const bee = document.createElement('div');
+    bee.className = 'pastel-bee';
+    bee.style.top = Math.random() * 80 + '%';
+    bee.style.animationDelay = (Math.random()*5) + 's';
+    bee.style.animationDuration = (6 + Math.random() * 4) + 's';
+    menu.appendChild(bee);
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function openModeSelect(mode) {
+  gameMode = mode;
+  showScreen('mode-screen');
+}
+
+function pickStudent(side) {
+  let inputId = (side === 'p') ? 'student-list-p' : (side === 'w' ? 'student-list-w' : (side === 'l' ? 'team-a-nums' : 'team-b-nums'));
+  let pool = parseStudentNumbers(document.getElementById(inputId).value);
+  if(pool.length === 0) pool = Array.from({length: 20}, (_, i) => i + 1);
+  const result = pool[Math.floor(Math.random()* pool.length)];
+  document.getElementById('num-' + side).innerText = result;
+}
+
+function parseStudentNumbers(input) {
+  let nums = [];
+  let parts = input.split(',');
+  parts.forEach(p => {
+    if(p.includes('-')) {
+      let range = p.split('-');
+      let start = parseInt(range[0]);
+      let end = parseInt(range[1]);
+      for(let i=start; i<=end; i++) nums.push(i);
+    } else {
+      nums.push(parseInt(p.trim()));
+    }
+  });
+  return nums.filter(n => !isNaN(n));
+}
+
+function confirmSetup() {
+  document.getElementById('team-l-label').innerText = document.getElementById('team-a-name').value;
+  document.getElementById('team-r-label').innerText = document.getElementById('team-b-name').value;
+  scoreA = 0; scoreB = 0;
+  updateScoreDisplay();
+  startGame(gameStyle);
+}
+
+function speakWord() {
+  const u = new SpeechSynthesisUtterance(currentWords[wordIndex]);
+  u.lang = 'en-US'; 
+  window.speechSynthesis.speak(u);
+}
+
+function startGame(style) {
+  gameStyle = style;
+  if(gameMode === 'duel' && document.getElementById('mode-screen').classList.contains('active')) {
+    showScreen('setup-screen');
+    return;
+  }
+  const orderSelector = (gameMode === 'practice') ? 'order-p' : 'order-d';
+  const orderVal = document.querySelector(`input[name="${orderSelector}"]:checked`).value;
+  currentWords = [...originalWords];
+  if(orderVal === 'shuffle') shuffleArray(currentWords);
+  wordIndex = 0;
+  isWaitingForNext = false;
+  currentLayout = 'qwerty';
+  hideNextButtons();
+  if(gameMode === 'practice') {
+    showScreen('game-screen');
+    renderRound('p-play', 'p');
+  } else {
+    showScreen('duel-screen');
+    renderRound('l-play', 'l');
+    renderRound('r-play', 'r');
+  }
+}
+
+function renderRound(containerId, side, clearDisplay = true) {
+  const container = document.getElementById(containerId);
+  const currentText = clearDisplay ? "" : (document.getElementById(side + "-display")?.innerText || "");
+  container.innerHTML = "";
+  const word = currentWords[wordIndex];
+  if(gameStyle === 'spell') {
+    const display = document.createElement('div');
+    display.id = side + "-display"; 
+    display.className = "display-area";
+    display.innerText = currentText;
+    container.appendChild(display);
+    renderKeyboard(container, side);
+  } else {
+    renderUnscramble(container, side, word);
+  }
+}
+
+function renderUnscramble(container, side, phrase) {
+  const wrapper = document.createElement('div');
+  wrapper.className = "unscramble-container";
+  const targetDiv = document.createElement('div');
+  targetDiv.className = "target-slots";
+  targetDiv.id = side + "-target";
+  const poolDiv = document.createElement('div');
+  poolDiv.className = "letter-pool";
+  poolDiv.id = side + "-pool";
+
+  const words = phrase.split(' ');
+  words.forEach((w) => {
+    const wordGroup = document.createElement('div');
+    wordGroup.className = "word-group";
+    w.split('').forEach(() => {
+      const slot = document.createElement('div');
+      slot.className = "slot";
+      slot.onclick = () => {
+        if(isWaitingForNext || !slot.innerText) return;
+        const tileId = slot.dataset.tileId;
+        const originalTile = document.getElementById(tileId);
+        if(originalTile) originalTile.style.visibility = "visible";
+        slot.innerText = "";
+        slot.style.background = "rgba(255,255,255,0.5)";
+        slot.style.border = "3px dashed #ccc";
+        slot.classList.remove('filled');
+      };
+      wordGroup.appendChild(slot);
+    });
+    targetDiv.appendChild(wordGroup);
+  });
+
+  const letters = phrase.replace(/\s/g, '').split('').sort(() => Math.random() - 0.5);
+  letters.forEach((l, index) => {
+    const tile = document.createElement('div');
+    tile.className = "tile";
+    tile.id = side + "-tile-" + index;
+    tile.innerText = l;
+    tile.onclick = () => {
+      if(isWaitingForNext) return;
+      const emptySlots = targetDiv.querySelectorAll('.slot');
+      for(let slot of emptySlots) {
+        if(!slot.innerText) {
+          slot.innerText = l;
+          slot.dataset.tileId = tile.id;
+          slot.style.background = "var(--bee-yellow)";
+          slot.style.border = "3px solid black";
+          slot.classList.add('filled');
+          tile.style.visibility = "hidden";
+          checkUnscrambleWin(side, phrase);
+          break;
+        }
+      }
+    };
+    poolDiv.appendChild(tile);
+  });
+
+  wrapper.appendChild(targetDiv);
+  wrapper.appendChild(poolDiv);
+  container.appendChild(wrapper);
+}
+
+function checkUnscrambleWin(side, phrase) {
+  const slots = document.getElementById(side + "-target").querySelectorAll('.slot');
+  let attempt = "";
+  const targetNoSpaces = phrase.replace(/\s/g, '');
+  slots.forEach(s => { attempt += s.innerText || ""; });
+  if(attempt.toLowerCase() === targetNoSpaces.toLowerCase()) handleWin(side);
+}
+
+function renderKeyboard(container, side) {
+  const kb = document.createElement('div'); kb.className = "keyboard";
+  const activeKeys = (currentLayout === 'qwerty') ? qwerty : symbols;
+  
+  activeKeys.forEach(row => {
+    const rowDiv = document.createElement('div'); rowDiv.className = "kb-row";
+    row.forEach(l => {
+      const k = document.createElement('div'); k.className = "key";
+      k.innerText = (isCaps && currentLayout === 'qwerty') ? l.toUpperCase() : l.toLowerCase();
+      k.onclick = () => handleInput(side, k.innerText);
+      rowDiv.appendChild(k);
+    });
+    kb.appendChild(rowDiv);
+  });
+
+  const row4 = document.createElement('div'); row4.className = "kb-row";
+  const toggleBtn = document.createElement('div');
+  toggleBtn.className = "key";
+  toggleBtn.innerText = (currentLayout === 'qwerty') ? "123" : "ABC";
+  toggleBtn.style.width = "50px";
+  toggleBtn.onclick = () => {
+    currentLayout = (currentLayout === 'qwerty') ? 'symbols' : 'qwerty';
+    renderRound(container.id, side, false);
+  };
+
+  if (currentLayout === 'qwerty') {
+    const shift = document.createElement('div');
+    shift.className = "key" + (isCaps ? " key-active" : "");
+    shift.innerText = "SHIFT";
+    shift.onclick = () => {
+      if(!isWaitingForNext) {
+        isCaps = !isCaps;
+        renderRound(container.id, side, false);
+      }
+    };
+    row4.appendChild(shift);
+  }
+
+  const space = document.createElement('div'); space.className = "key";
+  space.innerText = "SPACE"; space.style.width = "70px"; 
+  space.onclick = () => handleInput(side, " ");
+
+  const del = document.createElement('div'); del.className = "key"; del.innerText = "DEL"; 
+  del.onclick = () => {
+    if(isWaitingForNext) return;
+    const d = document.getElementById(side + "-display");
+    d.innerText = d.innerText.slice(0, -1);
+  };
+
+  row4.appendChild(toggleBtn);
+  row4.appendChild(space);
+  row4.appendChild(del);
+  kb.appendChild(row4);
+  container.appendChild(kb);
+}
+
+function handleInput(side, char) {
+  if(isWaitingForNext) return;
+  const display = document.getElementById(side + "-display");
+  display.innerText += char;
+  if(isCaps) {
+    isCaps = false;
+    renderRound(side === 'p' ? 'p-play' : side + '-play', side, false);
+  }
+  if(display.innerText.trim().toLowerCase() === currentWords[wordIndex].trim().toLowerCase()) {
+    display.classList.add('correct-flash');
+    handleWin(side);
+  }
+}
+
+function handleWin(side) {
+  if(isWaitingForNext) return;
+  isWaitingForNext = true;
+  const wordCount = currentWords[wordIndex].trim().split(/\s+/).length;
+  if(side === 'l') scoreA += wordCount;
+  if(side === 'r') scoreB += wordCount;
+  updateScoreDisplay();
+  
+  if(gameMode === 'practice') document.getElementById('next-btn-p').style.display = 'block';
+  else document.getElementById('next-btn-duel').style.display = 'block';
+}
+
+function updateScoreDisplay() {
+  if(document.getElementById('score-l')) document.getElementById('score-l').innerText = scoreA;
+  if(document.getElementById('score-r')) document.getElementById('score-r').innerText = scoreB;
+}
+
+function nextWord() {
+  wordIndex++;
+  isWaitingForNext = false;
+  isCaps = false;
+  currentLayout = 'qwerty';
+  hideNextButtons();
+
+  if(wordIndex >= currentWords.length) {
+    alert(`GAME OVER!\nFinal Scores:\nTeam A: ${scoreA}\nTeam B: ${scoreB}`);
+    showScreen('menu-screen');
+  } else {
+    if(gameMode === 'practice') renderRound('p-play', 'p', true);
+    else { renderRound('l-play', 'l', true); renderRound('r-play', 'r', true); }
+  }
+}
+
+function hideNextButtons() {
+  document.getElementById('next-btn-p').style.display = 'none';
+  document.getElementById('next-btn-duel').style.display = 'none';
+}
+
+function saveWords() {
+  const list = document.getElementById('word-input').value.split('\n').filter(x => x.trim());
+  if(list.length) {
+    const encoded = btoa(JSON.stringify(list));
+    const baseUrl = window.location.href.split('?')[0];
+    const fullLink = baseUrl + "?w=" + encoded;
+    const display = document.getElementById('link-display-box');
+    display.innerText = "SHARE THIS LINK: " + fullLink;
+    display.style.display = 'block';
+    originalWords = list;
+    navigator.clipboard.writeText(fullLink);
+    alert("Link Copied to Clipboard!");
+  }
+}
+
+function loadByCode() {
+  const val = document.getElementById('game-code-input').value;
+  if(val.includes('?w=')) window.location.href = val;
+  else alert("Please paste a full game link.");
+}
+</script>
+</body>
+</html>
