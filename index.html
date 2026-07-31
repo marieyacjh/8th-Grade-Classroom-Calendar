@@ -528,19 +528,7 @@ input[type="text"], select {
         </div>
         <div class="control-box">
           <label>Rain Chance (PoP %)</label>
-          <select id="weather-pop-select" onchange="updateWeatherDisplay()">
-            <option value="0%">0%</option>
-            <option value="10%">10%</option>
-            <option value="20%">20%</option>
-            <option value="30%" selected>30%</option>
-            <option value="40%">40%</option>
-            <option value="50%">50%</option>
-            <option value="60%">60%</option>
-            <option value="70%">70%</option>
-            <option value="80%">80%</option>
-            <option value="90%">90%</option>
-            <option value="100%">100%</option>
-          </select>
+          <select id="weather-pop-select" onchange="updateWeatherDisplay()"></select>
         </div>
       </div>
 
@@ -548,7 +536,7 @@ input[type="text"], select {
       <div class="sentence-container">
         It is <div class="drop-zone" data-type="cwa-sky" id="dz-cwa-sky"></div> 
         and <div class="drop-zone" data-type="cwa-comfort" id="dz-cwa-comfort"></div>. 
-        The temperature is <span id="temp-val-display" style="color:#d9534f;">33°C</span> 
+        The temperature is <span id="temp-val-display" style="color:#d9534f;">28°C</span> 
         with <span id="advisory-val-display" style="color:#f0ad4e;">High UV Index</span> 
         and <span id="pop-val-display" style="color:#0275d8;">30%</span> chance of rain.
       </div>
@@ -633,7 +621,7 @@ const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const SEASONS = ["Spring", "Summer", "Fall", "Winter"];
 
-// Central Weather Administration (CWA Taiwan) Specific Vocabulary
+// Central Weather Administration (CWA Taiwan) Specific Vocabulary (Added "Sunny")
 const CWA_SKY_LIST = [
   "Sunny", "Partly Cloudy", "Mostly Clear", "Overcast", "Occasional Showers", "Afternoon Thundershowers"
 ];
@@ -660,6 +648,7 @@ function getSeason(monthIdx) {
 window.onload = () => {
   calculateCurrentDateDefaults();
   populateTempOptions();
+  populatePopOptions();
   populateCardPools();
   setupDropZones();
   updateThemeDecorations('default');
@@ -679,6 +668,7 @@ window.onload = () => {
   }
 };
 
+// Temperature Range: 15 to 50
 function populateTempOptions() {
   const select = document.getElementById('weather-temp-select');
   select.innerHTML = '';
@@ -686,7 +676,20 @@ function populateTempOptions() {
     const opt = document.createElement('option');
     opt.value = i + "°C";
     opt.innerText = i + "°C";
-    if (i === 33) opt.selected = true;
+    if (i === 28) opt.selected = true;
+    select.appendChild(opt);
+  }
+}
+
+// Rain Chance (PoP %): 0% to 100% in steps of 10
+function populatePopOptions() {
+  const select = document.getElementById('weather-pop-select');
+  select.innerHTML = '';
+  for (let i = 0; i <= 100; i += 10) {
+    const opt = document.createElement('option');
+    opt.value = i + "%";
+    opt.innerText = i + "%";
+    if (i === 30) opt.selected = true;
     select.appendChild(opt);
   }
 }
@@ -932,52 +935,6 @@ function updateTrackerUI(id, isComplete, label) {
   }
 }
 
-// Toast Display Helper
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.innerText = msg;
-  toast.style.display = 'block';
-  setTimeout(() => { toast.style.display = 'none'; }, 2000);
-}
-
-// Confetti Helper
-function triggerConfetti(burst = false) {
-  const canvas = document.getElementById('confetti-canvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  const count = burst ? 100 : 30;
-  const particles = Array.from({ length: count }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height - canvas.height,
-    r: Math.random() * 6 + 4,
-    d: Math.random() * count,
-    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-    tilt: Math.floor(Math.random() * 10) - 10
-  }));
-
-  let frame = 0;
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => {
-      ctx.beginPath();
-      ctx.lineWidth = p.r;
-      ctx.strokeStyle = p.color;
-      ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
-      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
-      ctx.stroke();
-      p.y += Math.cos(p.d) + 1 + p.r / 2;
-      p.x += Math.sin(0.5);
-    });
-
-    frame++;
-    if (frame < 120) requestAnimationFrame(draw);
-    else ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-  draw();
-}
-
 // Web Speech API Integration
 function speakSentence(text) {
   if (!state.soundEnabled || !('speechSynthesis' in window)) return;
@@ -1110,16 +1067,73 @@ function updateThemeDecorations(themeKey) {
   }
 }
 
+// Toast Display
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerText = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
+// Confetti Particle Effect
+function triggerConfetti(isBig = false) {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const count = isBig ? 120 : 40;
+  const particles = [];
+  const colors = ['#ff4081', '#00e676', '#ffeb3b', '#00e5ff', '#ff9100'];
+
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * (isBig ? 18 : 10),
+      vy: (Math.random() - 0.5) * (isBig ? 18 : 10) - 4,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1
+    });
+  }
+
+  let frames = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.2; // gravity
+      p.alpha -= 0.015;
+      ctx.globalAlpha = Math.max(p.alpha, 0);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    });
+
+    frames++;
+    if (frames < 70) {
+      requestAnimationFrame(animate);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  animate();
+}
+
+// Shareable Link Generator
 function generateShareableLink() {
   const config = {
     theme: document.getElementById('setting-bg').value
   };
   const encoded = btoa(JSON.stringify(config));
-  const url = window.location.origin + window.location.pathname + '?w=' + encoded;
+  const baseUrl = window.location.href.split('?')[0];
+  const fullLink = baseUrl + "?w=" + encoded;
+
   const out = document.getElementById('share-link-out');
-  out.innerText = url;
+  out.innerText = fullLink;
   out.style.display = 'block';
-  navigator.clipboard.writeText(url);
+  navigator.clipboard.writeText(fullLink);
   showToast("Link copied to clipboard!");
 }
 </script>
