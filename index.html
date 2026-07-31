@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Daily Classroom Calendar - Marie's Creative Classroom</title>
+<title>Calendar and Weather Zone - Marie's Creative Classroom</title>
 <style>
 :root {
   --bg-gradient: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
@@ -446,7 +446,7 @@ input[type="text"], select {
 
     <!-- Title Header -->
     <h1 style="margin:0; text-align:center; font-size:clamp(1.8rem, 5vw, 2.5rem); text-shadow: 2px 2px 0 #fff;">
-      📅 TODAY'S CLASSROOM CALENDAR
+      📅 CALENDAR AND WEATHER ZONE
     </h1>
 
     <!-- 1. DAY SECTION -->
@@ -466,11 +466,11 @@ input[type="text"], select {
     <div class="calendar-card" id="sec-date">
       <div class="section-header">
         <span class="section-title">2️⃣ DATE</span>
-        <button class="btn btn-small" onclick="speakSentence('What\'s the date today? Today is ' + (state.answers.month || '') + ' ' + (state.answers.date || '') + ' ' + (state.answers.year || ''))">🔊 Listen</button>
+        <button class="btn btn-small" onclick="speakSentence('What\'s the date today? It\'s ' + (state.answers.month || 'blank') + ' ' + (state.answers.date || 'blank') + ' ' + (state.answers.year || 'blank'))">🔊 Listen</button>
       </div>
       <div class="question-text">What's the date today?</div>
       <div class="sentence-container">
-        Today is 
+        It's 
         <div class="drop-zone" data-type="month" id="dz-month"></div>
         <div class="drop-zone" data-type="date" id="dz-date"></div>
         <div class="drop-zone" data-type="year" id="dz-year"></div>.
@@ -621,7 +621,7 @@ const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const SEASONS = ["Spring", "Summer", "Fall", "Winter"];
 
-// Central Weather Administration (CWA Taiwan) Specific Vocabulary (Added "Sunny")
+// Central Weather Administration (CWA Taiwan) Specific Vocabulary
 const CWA_SKY_LIST = [
   "Sunny", "Partly Cloudy", "Mostly Clear", "Overcast", "Occasional Showers", "Afternoon Thundershowers"
 ];
@@ -872,7 +872,6 @@ function validateAndPlace(cardEl, zoneEl) {
     return;
   }
 
-  // Weather slots accept any valid category-matched CWA standard card
   let isCorrect = false;
   if (cardType === 'cwa-sky' || cardType === 'cwa-comfort') {
     isCorrect = true;
@@ -1059,15 +1058,32 @@ function updateThemeDecorations(themeKey) {
   for (let i = 0; i < 12; i++) {
     const item = document.createElement('div');
     item.className = 'floating-item';
-    item.innerText = icons[i % icons.length];
-    item.style.left = Math.random() * 90 + '%';
+    item.innerText = icons[Math.floor(Math.random() * icons.length)];
+    item.style.left = (Math.random() * 90) + '%';
     item.style.animationDelay = (Math.random() * 8) + 's';
-    item.style.animationDuration = (8 + Math.random() * 5) + 's';
+    item.style.animationDuration = (8 + Math.random() * 6) + 's';
     container.appendChild(item);
   }
 }
 
-// Toast Display
+function generateShareableLink() {
+  const config = {
+    theme: document.getElementById('setting-bg').value
+  };
+  const encoded = btoa(JSON.stringify(config));
+  const url = window.location.origin + window.location.pathname + '?w=' + encoded;
+  
+  const displayBox = document.getElementById('share-link-out');
+  displayBox.innerText = url;
+  displayBox.style.display = 'block';
+
+  navigator.clipboard.writeText(url).then(() => {
+    showToast("Share link copied to clipboard!");
+  }).catch(() => {
+    showToast("Link generated below!");
+  });
+}
+
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.innerText = msg;
@@ -1075,66 +1091,45 @@ function showToast(msg) {
   setTimeout(() => { toast.style.display = 'none'; }, 2000);
 }
 
-// Confetti Particle Effect
-function triggerConfetti(isBig = false) {
+// Confetti Cannon
+function triggerConfetti(burst = false) {
   const canvas = document.getElementById('confetti-canvas');
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  const count = isBig ? 120 : 40;
-  const particles = [];
-  const colors = ['#ff4081', '#00e676', '#ffeb3b', '#00e5ff', '#ff9100'];
+  let particles = [];
+  const count = burst ? 150 : 40;
+  const colors = ['#ff6b6b', '#4ecdc4', '#ffd166', '#1a535c', '#ff9f43'];
 
   for (let i = 0; i < count; i++) {
     particles.push({
       x: canvas.width / 2,
-      y: canvas.height / 2,
-      vx: (Math.random() - 0.5) * (isBig ? 18 : 10),
-      vy: (Math.random() - 0.5) * (isBig ? 18 : 10) - 4,
+      y: burst ? canvas.height / 2 : 0,
+      vx: (Math.random() - 0.5) * (burst ? 12 : 6),
+      vy: burst ? (Math.random() - 0.5) * 12 : Math.random() * 3 + 2,
       size: Math.random() * 8 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
-      alpha: 1
+      life: 100
     });
   }
 
-  let frames = 0;
-  function animate() {
+  function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach((p) => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.2; // gravity
-      p.alpha -= 0.015;
-      ctx.globalAlpha = Math.max(p.alpha, 0);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, p.size, p.size);
+    let active = false;
+    particles.forEach(p => {
+      if (p.life > 0) {
+        active = true;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      }
     });
-
-    frames++;
-    if (frames < 70) {
-      requestAnimationFrame(animate);
-    } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+    if (active) requestAnimationFrame(render);
   }
-  animate();
-}
-
-// Shareable Link Generator
-function generateShareableLink() {
-  const config = {
-    theme: document.getElementById('setting-bg').value
-  };
-  const encoded = btoa(JSON.stringify(config));
-  const baseUrl = window.location.href.split('?')[0];
-  const fullLink = baseUrl + "?w=" + encoded;
-
-  const out = document.getElementById('share-link-out');
-  out.innerText = fullLink;
-  out.style.display = 'block';
-  navigator.clipboard.writeText(fullLink);
-  showToast("Link copied to clipboard!");
+  render();
 }
 </script>
 </body>
