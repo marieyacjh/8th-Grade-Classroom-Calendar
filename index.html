@@ -550,7 +550,7 @@ input[type="text"], select {
 
     <!-- PROGRESS TRACKER -->
     <div class="progress-card">
-      <h2 style="margin:0;">🎉 Today's Calendar Challenge</h2>
+      <h2 style="margin:0;">🎉 Today's Challenge</h2>
       <div class="tracker-grid">
         <div class="tracker-item" id="tr-day">❌ Day</div>
         <div class="tracker-item" id="tr-date">❌ Date</div>
@@ -580,7 +580,7 @@ input[type="text"], select {
         <option value="arena">Fantasy Arena</option>
         <option value="spring">Spring Blossom</option>
         <option value="summer">Summer Sun</option>
-        <option value="fall">Autumn Leaves</option>
+        <option value="autumn">Autumn Leaves</option>
         <option value="winter">Winter Snow</option>
       </select>
     </label>
@@ -619,7 +619,7 @@ const state = {
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const SEASONS = ["Spring", "Summer", "Fall", "Winter"];
+const SEASONS = ["Spring", "Summer", "Autumn", "Winter"];
 
 // Central Weather Administration (CWA Taiwan) Specific Vocabulary
 const CWA_SKY_LIST = [
@@ -640,7 +640,7 @@ function getOrdinal(n) {
 function getSeason(monthIdx) {
   if (monthIdx >= 2 && monthIdx <= 4) return "Spring";
   if (monthIdx >= 5 && monthIdx <= 7) return "Summer";
-  if (monthIdx >= 8 && monthIdx <= 10) return "Fall";
+  if (monthIdx >= 8 && monthIdx <= 10) return "Autumn";
   return "Winter";
 }
 
@@ -1037,7 +1037,7 @@ function changeTheme(themeKey) {
     root.style.setProperty('--bg-gradient', 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)');
   } else if (themeKey === 'summer') {
     root.style.setProperty('--bg-gradient', 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)');
-  } else if (themeKey === 'fall') {
+  } else if (themeKey === 'autumn') {
     root.style.setProperty('--bg-gradient', 'linear-gradient(135deg, #e65c00 0%, #F9D423 100%)');
   } else if (themeKey === 'winter') {
     root.style.setProperty('--bg-gradient', 'linear-gradient(135deg, #E0EAFC 0%, #CFDEF3 100%)');
@@ -1051,7 +1051,7 @@ function updateThemeDecorations(themeKey) {
   let icons = ['☁️', '⭐', '🎈'];
   if (themeKey === 'spring') icons = ['🌸', '🌷', '🦋'];
   if (themeKey === 'summer') icons = ['☀️', '🏖️', '🍦'];
-  if (themeKey === 'fall') icons = ['🍁', '🍂', '🌾'];
+  if (themeKey === 'autumn') icons = ['🍁', '🍂', '🌾'];
   if (themeKey === 'winter') icons = ['❄️', '☃️', '🧊'];
   if (themeKey === 'arena') icons = ['⚡', '🔥', '🛡️'];
 
@@ -1066,24 +1066,6 @@ function updateThemeDecorations(themeKey) {
   }
 }
 
-function generateShareableLink() {
-  const config = {
-    theme: document.getElementById('setting-bg').value
-  };
-  const encoded = btoa(JSON.stringify(config));
-  const url = window.location.origin + window.location.pathname + '?w=' + encoded;
-  
-  const displayBox = document.getElementById('share-link-out');
-  displayBox.innerText = url;
-  displayBox.style.display = 'block';
-
-  navigator.clipboard.writeText(url).then(() => {
-    showToast("Share link copied to clipboard!");
-  }).catch(() => {
-    showToast("Link generated below!");
-  });
-}
-
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.innerText = msg;
@@ -1091,45 +1073,66 @@ function showToast(msg) {
   setTimeout(() => { toast.style.display = 'none'; }, 2000);
 }
 
-// Confetti Cannon
-function triggerConfetti(burst = false) {
+function generateShareableLink() {
+  const theme = document.getElementById('setting-bg').value;
+  const config = { theme };
+  const encoded = btoa(JSON.stringify(config));
+  const url = window.location.origin + window.location.pathname + '?w=' + encoded;
+  
+  const out = document.getElementById('share-link-out');
+  out.innerText = url;
+  out.style.display = 'block';
+  
+  navigator.clipboard.writeText(url).then(() => {
+    showToast("Link copied to clipboard!");
+  });
+}
+
+// Lightweight Confetti Trigger
+function triggerConfetti(isFull = false) {
   const canvas = document.getElementById('confetti-canvas');
   const ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  let particles = [];
-  const count = burst ? 150 : 40;
-  const colors = ['#ff6b6b', '#4ecdc4', '#ffd166', '#1a535c', '#ff9f43'];
+  const count = isFull ? 120 : 35;
+  const particles = [];
+  const colors = ['#ff6b6b', '#4ecdc4', '#ffd166', '#ff9f43', '#1dd1a1', '#f368e0'];
 
   for (let i = 0; i < count; i++) {
     particles.push({
       x: canvas.width / 2,
-      y: burst ? canvas.height / 2 : 0,
-      vx: (Math.random() - 0.5) * (burst ? 12 : 6),
-      vy: burst ? (Math.random() - 0.5) * 12 : Math.random() * 3 + 2,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * (isFull ? 16 : 8),
+      vy: (Math.random() - 0.7) * (isFull ? 16 : 8),
       size: Math.random() * 8 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
-      life: 100
+      alpha: 1
     });
   }
 
-  function render() {
+  let frame = 0;
+  function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let active = false;
-    particles.forEach(p => {
-      if (p.life > 0) {
-        active = true;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life--;
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-      }
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.2; // Gravity
+      p.alpha -= 0.015;
+
+      ctx.globalAlpha = Math.max(p.alpha, 0);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
     });
-    if (active) requestAnimationFrame(render);
+
+    frame++;
+    if (frame < 80) {
+      requestAnimationFrame(animate);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
   }
-  render();
+  animate();
 }
 </script>
 </body>
